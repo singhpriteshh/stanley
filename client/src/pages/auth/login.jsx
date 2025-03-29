@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { loginUser } from "@/store/auth-slice";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function AuthLogin() {
 
@@ -16,6 +16,7 @@ function AuthLogin() {
   const [formData, setFormData] = useState(initialState);
   const dispatch = useDispatch();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   function onSubmit(event) {
     event.preventDefault();
@@ -26,6 +27,7 @@ function AuthLogin() {
           title: data?.payload?.message,
           variant: "destructive"
         })
+        navigate("/productpage")
       } else {
         toast({
           title: "Login unsuccessfull"
