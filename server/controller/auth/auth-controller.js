@@ -1,134 +1,173 @@
-const bcrypt = require("bcryptjs")
-const jwt = require("jsonwebtoken")
-const User = require("../../models/User")
-
-
-
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../../models/User");
+const sendMail = require("../../utils/mailfunction");
 
 //register
 
 const registerUser = async (req, res) => {
-    const { userName, email, password } = req.body;
+  const { first_name, last_name, phone_number, email, password, isVerified } =
+    req.body;
+  console.log("Request Body:", req.body);
 
-    console.log(req.body);
-
-
-    try {
-
-        const checkUser = await User.findOne({ email });
-        if (checkUser) return res.json({
-            success: false,
-            message: "user is already exist with this email! please try to login"
-        });
-
-        const hashPassword = await bcrypt.hash(password, 12);
-        const newUser = new User({
-            userName,
-            email,
-            password: hashPassword,
-        });
-
-
-        await newUser.save();
-        res.status(200).json({
-            success: true,
-            message: "Registration Successful"
-        });
-
-    } catch (e) {
-        console.log(e);
-        res.status(500).json({
-            success: false,
-            message: "Some error occured",
-        });
-
+  try {
+    const checkUser = await User.findOne({ email });
+    if (checkUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this email! Please try to login.",
+      });
     }
-};
 
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new User({
+      first_name,
+      last_name,
+      phone_number,
+      email,
+      isVerified,
+      password: hashPassword,
+    });
+
+    await newUser.save();
+
+    // Send verification email
+    const mailSubject = "Verification Mail";
+    const randomToken = jwt.sign({ email }, "CLIENT_SECRET_KEY", {
+      expiresIn: "10m",
+    });
+
+    const content = `Hello ${first_name}, Please Click <a href="http://localhost:5173/auth/mail-verification?token=${randomToken}&phoneNumber=${phone_number}">Verify</a> to verify your email`;
+
+    sendMail(email, mailSubject, content);
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully!",
+    });
+  } catch (e) {
+    console.error("Registration Error:", e);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during registration.",
+    });
+  }
+};
 
 //Login
-
 const loginUser = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
+  try {
+    const checkUser = await User.findOne({ email });
+    if (!checkUser)
+      return res.json({
+        success: false,
+        message: "user not exist",
+      });
 
-    try {
+    const checkPasswordMatch = await bcrypt.compare(
+      password,
+      checkUser.password
+    );
+    if (!checkPasswordMatch)
+      return res.json({
+        success: false,
+        message: "Invalid Credentials",
+      });
 
-        const checkUser = await User.findOne({ email });
-        if (!checkUser) return res.json({
-            success: false,
-            message: "user not exist"
-        })
+    const token = jwt.sign(
+      {
+        id: checkUser._id,
+        email: checkUser.email,
+      },
+      "CLIENT_SECRET_KEY",
+      { expiresIn: "60m" }
+    );
 
-        const checkPasswordMatch = await bcrypt.compare(password, checkUser.password);
-        if (!checkPasswordMatch) return res.json({
-            success: false,
-            message: "Invalid Credentials"
-        });
-
-        const token = jwt.sign({
-            id: checkUser._id,
-            role: checkUser.role,
-            email: checkUser.email
-        }, 'CLIENT_SECRET_KEY', { expiresIn: '60m' })
-
-        res.cookie('token', token, { httpOnly: true, secure: false }).json({
-            success: true,
-            message: "Logged in Successfully",
-            user: {
-                email: checkUser.email,
-                role: checkUser.role,
-                id: checkUser._id,
-            },
-        });
-    } catch (e) {
-        console.log(e);
-        res.status(500).json({
-            success: false,
-            message: "Some error occured"
-        })
-
-    }
-}
-
-
-//logout
-
-const logoutUser = (req, res) => {
-    res.clearCookie("token").json({
-        success: true,
-        message: "LogOut Successfully"
+    res.cookie("token", token, { httpOnly: true, secure: false }).json({
+      success: true,
+      message: "Logged in Successfully",
+      user: {
+        email: checkUser.email,
+        id: checkUser._id,
+      },
     });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occured",
+    });
+  }
 };
 
+//verify mail
+const verifyEmail = async (req, res) => {
+  const token = req.query.token;
+ 
+  try {
+    // Decode JWT
+    const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
+    const email = decoded.email;
+
+    // Find user by email and phone number
+    const user = await User.findOne({ email });
+    
+    if (!user || user.isverified) {
+      return res.status(200).json({
+        success: false,
+        message: "Invalid email or already verified.",
+      });
+    }
+
+    // Update isVerified field
+    user.isverified = true;
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully.",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or expired token.",
+    });
+  }
+};
+
+//logout
+const logoutUser = (req, res) => {
+  res.clearCookie("token").json({
+    success: true,
+    message: "LogOut Successfully",
+  });
+};
 
 const authMiddleware = async (req, res, next) => {
-    const token = req.cookies.token;
-    console.log(token);
-    
-    if (!token) return res.json({
-        success: false,
-        message: "Unauthorized user !"
-    })
+  const token = req.cookies.token;
+  console.log(token);
 
-    try {
+  if (!token)
+    return res.json({
+      success: false,
+      message: "Unauthorized user !",
+    });
 
+  try {
+    const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({
+      success: false,
+      message: "some error occured",
+    });
+  }
+};
 
-        const decoded = jwt.verify(token, 'CLIENT_SECRET_KEY');
-        req.user = decoded;
-        next();
-
-    } catch (error) {
-        console.log(error);
-        res.status(401).json({
-            success: false,
-            message: "some error occured",
-        })
-
-    }
-}
-
-
-
-
-module.exports = { registerUser, loginUser, logoutUser, authMiddleware }
+module.exports = { registerUser, loginUser, logoutUser, authMiddleware, verifyEmail };

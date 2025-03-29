@@ -1,5 +1,5 @@
 const express = require("express")
-const { registerUser, loginUser, logoutUser, authMiddleware } = require("../../controller/auth/auth-controller")
+const { registerUser, loginUser, logoutUser, authMiddleware, verifyEmail } = require("../../controller/auth/auth-controller")
 
 const router = express.Router();
 
@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.get("/mail-verification", verifyEmail);
 router.post("/logout",logoutUser);
 router.get("/check-auth", authMiddleware, (req, res)=> {
     const user =req.user;
