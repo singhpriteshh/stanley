@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useToast } from "../../hooks/use-toast";
+import { toast } from "react-toastify";
 import axios from "axios";
 
 const EmailVerification = () => {
   const [verificationStatus, setVerificationStatus] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -19,19 +18,19 @@ const EmailVerification = () => {
         const response = await axios.get('http://localhost:5000/api/auth/mail-verification',
             { params: { token, phoneNumber } }
         );
-        const { success, message } = response.data;
+        const { message } = response.data;
 
         setVerificationStatus(message);
-        toast({ title: message, variant: success ? "default" : "destructive" });
+        toast.success(message);
       } catch (error) {
         setVerificationStatus("Token Expired.");
-        toast({ title: "Token Expired.", variant: "destructive" });
+        toast.error("Token Expired.");
         console.error(error);
       }
     };
 
     verifyEmail();
-  }, [location.search, navigate, toast]);
+  }, [location.search, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
@@ -41,7 +40,7 @@ const EmailVerification = () => {
         {verificationStatus.includes("successfully") && (
           <button
             onClick={() => navigate("/auth/login")}
-            className="bg-green-500 text-black py-2 px-4 rounded hover:bg-green-700 transition"
+            className="bg-blue-500 text-black py-2 px-4 rounded hover:bg-green-700 transition"
           >
             Back to Login
           </button>

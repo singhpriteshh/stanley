@@ -49,7 +49,7 @@ function AddData() {
   function handleSubmit(e) {
     e.preventDefault();
     if (isFormValid()) {
-      navigate("/displaydata", {
+      navigate("/protected/displaydata", {
         state: {
           data : { formData, visitStatus, reason }, 
           data1 : {product, category, date},

@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const randomstring = require("randomstring")
 const User = require("../../models/User");
+const PasswordReset = require("../../models/PasswordReset")
 const sendMail = require("../../utils/mailfunction");
 
 //register
@@ -87,14 +89,22 @@ const loginUser = async (req, res) => {
       { expiresIn: "60m" }
     );
 
-    res.cookie("token", token, { httpOnly: true, secure: false }).json({
-      success: true,
-      message: "Logged in Successfully",
-      user: {
-        email: checkUser.email,
-        id: checkUser._id,
-      },
-    });
+    if (res.status(201)) {
+      return res.json({
+          success: true,
+          token: token,
+          message: "Logged In Successfully",
+          user: {
+              first_name: checkUser.first_name,
+              last_name: checkUser.last_name,
+              email:checkUser.email,
+              phone_number: checkUser.phone_number,
+              isverified: checkUser.isverified
+          }
+      });
+  } else {
+      return res.json({ error: "error" });
+  }
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -139,35 +149,97 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-//logout
-const logoutUser = (req, res) => {
-  res.clearCookie("token").json({
-    success: true,
-    message: "LogOut Successfully",
-  });
-};
-
-const authMiddleware = async (req, res, next) => {
-  const token = req.cookies.token;
-  console.log(token);
-
-  if (!token)
-    return res.json({
-      success: false,
-      message: "Unauthorized user !",
-    });
-
+const forgetPassword = async (req, res) => {
   try {
-    const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
-    req.user = decoded;
-    next();
+      const { email } = req.body;
+      if (!email) {
+          return res.status(400).json({
+              success: false,
+              message: "Email is required",
+          });
+      }
+
+      const user = await User.findOne({ email });
+
+      if (!user) {
+          return res.status(401).json({
+              success: false,
+              message: "Invalid email, no user found",
+          });
+      }
+
+      const token = randomstring.generate();
+
+      // Delete any existing reset record
+      await PasswordReset.deleteMany({ email });
+
+      // Create a new reset record
+      await PasswordReset.create({
+          email,
+          token,
+      });
+
+      const mailSubject = "Password reset";
+      const content = `Hello ${user.first_name}, Please <a href="http://localhost:5173/auth/reset-password?token=${token}">Click Here</a> to reset your password`;
+
+      sendMail(email, mailSubject, content);
+
+      return res.status(200).json({
+          success: true,
+          message: "Mail sent successfully",
+      });
+
   } catch (error) {
-    console.log(error);
-    res.status(401).json({
-      success: false,
-      message: "some error occured",
-    });
+      console.error("Forget Password Error:", error);
+      return res.status(500).json({
+          success: false,
+          message: "Something went wrong",
+      });
   }
 };
 
-module.exports = { registerUser, loginUser, logoutUser, authMiddleware, verifyEmail };
+const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+      const resetRecord = await PasswordReset.findOne({ token });
+
+      if (!resetRecord) {
+          return res.status(400).json({
+              success: false,
+              message: "Invalid token",
+          });
+      }
+
+      const user = await User.findOne({ email: resetRecord.email });
+      if (!user) {
+          return res.status(404).json({
+              success: false,
+              message: "User not found",
+          });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      user.password = hashedPassword;
+      await user.save();
+
+      await PasswordReset.deleteOne({ email: resetRecord.email });
+
+      return res.status(200).json({
+          success: true,
+          message: "Password reset successfully",
+      });
+
+  } catch (error) {
+      console.error("Reset Password Error:", error);
+      return res.status(500).json({
+          success: false,
+          message: "Failed to reset password. Please try again later.",
+      });
+  }
+};
+
+
+module.exports = { registerUser, loginUser, verifyEmail, forgetPassword, resetPassword };

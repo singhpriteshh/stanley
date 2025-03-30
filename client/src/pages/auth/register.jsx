@@ -1,7 +1,7 @@
 import { registerUser } from "@/apis/api";
 import CommonForm from "@/components/common/form";
 import { registerFormControl } from "@/config";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'react-toastify';
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -16,23 +16,17 @@ function AuthRegister() {
 
   const [formData, setFormData] = useState(initialState);
   const navigate = useNavigate();
-  const {toast} = useToast();
   
   const onSubmit = async(event) => {
     event.preventDefault();
     try {
       const response = await registerUser(formData);
-      if (response.status == 200) {
-          toast({
-              title: response.message
-          })
-          navigate("/auth/login");
-      } else {
-          toast({
-              title: response.message,
-              variant: "destructive"
-          })
-      }
+      if (response.status === 201) {
+        toast.success(response.data.message);
+        navigate("/auth/login");
+    } else {
+        toast.error(response.data.message);
+    }
   } catch (error) {
       console.log(error);
   }

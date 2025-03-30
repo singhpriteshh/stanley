@@ -1,9 +1,8 @@
+import { loginUser } from "@/apis/api";
 import CommonForm from "@/components/common/form";
 import { loginFormControl } from "@/config";
-import { useToast } from "@/hooks/use-toast";
-import { loginUser } from "@/store/auth-slice";
+import { toast } from 'react-toastify';
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 
 function AuthLogin() {
@@ -14,28 +13,28 @@ function AuthLogin() {
   }
 
   const [formData, setFormData] = useState(initialState);
-  const dispatch = useDispatch();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
-  function onSubmit(event) {
+  const onSubmit = async (event) => {
     event.preventDefault();
-    dispatch(loginUser(formData)).then((data) => {
+    try {
+      const response = await loginUser(formData);
 
-      if (data?.payload?.success) {
-        toast({
-          title: data?.payload?.message,
-          variant: "destructive"
-        })
+      if (response.data.success && response.data) {
+        const { token, user } = response.data;
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        toast.success(response.data.message)
         navigate("/productpage")
+
       } else {
-        toast({
-          title: "Login unsuccessfull"
-        })
+        const errorMsg = response.data.error || response.data.message;
+        toast.error(errorMsg)
       }
-
-    })
-
+    } catch (error) {
+      console.log(error)
+    }
   }
 
 
@@ -54,6 +53,10 @@ function AuthLogin() {
         setFormData={setFormData}
         onSubmit={onSubmit}
       />
+      <p className="flex justify-center">
+        Forget Password?
+        <Link to="/auth/forget-password" className="text-blue-800 hover:underline"> Reset It </Link>
+      </p>
     </div>
   );
 };

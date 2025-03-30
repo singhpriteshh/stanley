@@ -1,8 +1,10 @@
 import AuthLayout from "@/components/auth/layout";
 import ProtectedRoute from "@/components/common/protectedroute";
 import HomeLayout from "@/components/home/layout";
+import ForgetPassword from "@/pages/auth/forget-password";
 import AuthLogin from "@/pages/auth/login";
 import AuthRegister from "@/pages/auth/register";
+import ResetPassword from "@/pages/auth/reset-password";
 import EmailVerification from "@/pages/auth/verification-email";
 import AddData from "@/pages/home/adddata";
 import DisplayData from "@/pages/home/displayData";
@@ -21,7 +23,9 @@ const routesConfig = [
         children: [
             { path: "login", element: <AuthLogin /> },
             { path: "register", element: <AuthRegister /> },
-            { path: "mail-verification", element: <EmailVerification /> }
+            { path: "mail-verification", element: <EmailVerification /> },
+            { path: "forget-password", element: <ForgetPassword/> },
+            { path: "reset-password", element: <ResetPassword/> }
         ]
     },
     {

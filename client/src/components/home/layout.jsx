@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
+import { toast } from "react-toastify";
 
 function HomeLayout() {
   const [product, setProduct] = useState("");
@@ -22,7 +23,7 @@ function HomeLayout() {
       return;
     }
 
-    navigate("/home/adddata", {
+    navigate("/protected/home/adddata", {
       state: { product, category, date }, // Pass data to AddData page
     });
 
@@ -34,9 +35,16 @@ function HomeLayout() {
     }
   };
 
+  function handleLogout() {
+    localStorage.clear();
+    navigate("/auth/login")
+    toast.success('Logout Successful')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-md py-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+        <button onClick={handleLogout}>Logout</button>
         <div className="flex flex-col w-full md:w-1/4">
           <label htmlFor="product" className="text-sm font-medium text-gray-700">Activity Type</label>
           <select

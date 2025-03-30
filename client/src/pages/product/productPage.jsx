@@ -8,6 +8,9 @@ function ProductPage() {
     navigate(route);
   }
 
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  
   return (
     <div
       className="relative flex items-center justify-center min-h-screen bg-cover bg-center"
@@ -19,10 +22,10 @@ function ProductPage() {
       <div className="absolute right-20 flex flex-col items-center space-y-8 bg-gray-200 backdrop-blur-md bg-opacity-10 p-20 rounded-lg transition duration-300 hover:bg-opacity-20 shadow-md hover:shadow-xl">
 
         {/* Product Selection */}
-        <p className="text-black text-center font-bold text-3xl mb-4">Please Select Product Segment</p>
+        <p className="text-black text-center font-bold text-3xl mb-4">Hello <strong className='uppercase italic flex justify-center'>{user?.first_name}</strong> Please Select Product Segment</p>
         <div className="space-y-8">
           <button
-            onClick={() => handleNavigation('/home')}
+            onClick={() => handleNavigation('/protected/home')}
             className="block w-48 h-16 text-xl font-bold text-white rounded hover:opacity-90 backdrop-blur-md bg-opacity-10 transition duration-300 hover:bg-opacity-20 shadow-md hover:shadow-xl"
             style={{
               backgroundImage: 'url(./tucker.png)', // Background image for Tucker button
@@ -34,7 +37,7 @@ function ProductPage() {
             {/* TUCKER */}
           </button>
           <button
-            onClick={() => handleNavigation('/home')}
+            onClick={() => handleNavigation('/protected/home')}
             className="mt-2 mb-2 block w-48 h-16 text-xl font-bold text-white rounded hover:opacity-90 backdrop-blur-md bg-opacity-10 transition duration-300 hover:bg-opacity-20 shadow-md hover:shadow-xl"
             style={{
               backgroundImage: 'url(./nelson.png)', // Background image for Nelson button
@@ -46,7 +49,7 @@ function ProductPage() {
             {/* NELSON */}
           </button>
           <button
-            onClick={() => handleNavigation('/home')}
+            onClick={() => handleNavigation('/protected/home')}
             className="block w-48 h-16 text-xl font-bold text-white rounded hover:opacity-90 backdrop-blur-md bg-opacity-10 transition duration-300 hover:bg-opacity-20 shadow-md hover:shadow-xl"
             style={{
               backgroundImage: 'url(./stanley.png)', // Background image for Stanley button
