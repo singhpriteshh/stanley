@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
+import { LogOutIcon } from "lucide-react";
 
 function HomeLayout() {
   const [product, setProduct] = useState("");
@@ -19,7 +20,7 @@ function HomeLayout() {
 
   const handleNextpage = () => {
     if (!product || !category || !date) {
-      alert("Please select all fields before proceeding.");
+      toast.error("Please select all fields before proceeding.");
       return;
     }
 
@@ -43,8 +44,7 @@ function HomeLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-md py-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-        <button onClick={handleLogout}>Logout</button>
+      <header className="bg-white shadow-md py-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-center gap-4 md:gap-6">
         <div className="flex flex-col w-full md:w-1/4">
           <label htmlFor="product" className="text-sm font-medium text-gray-700">Activity Type</label>
           <select
@@ -95,7 +95,7 @@ function HomeLayout() {
           />
         </div>
 
-        <div className="w-full md:w-auto pt-6">
+        <div className="w-full md:w-auto flex gap-5 pt-6">
           <Button
             onClick={handleNextpage}
             disabled={isAddDataPage}
@@ -104,6 +104,7 @@ function HomeLayout() {
           >
             {isAddDataPage ? "Disabled" : "Next Page"}
           </Button>
+          <button onClick={handleLogout}><LogOutIcon /></button>
         </div>
       </header>
 

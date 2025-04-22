@@ -50,31 +50,6 @@ function DisplayData() {
       22,
       { align: "center" }
     );
-
-    // Add the HomeLayout data (product, category, and date) to the PDF
-
-    // doc.setFontSize(12);
-    // doc.text("Activity Type: " + (product || "Not selected"), 14, 30);
-    // doc.text("Business Type: " + (category || "Not selected"), 14, 35);
-    // doc.text("Selected Date: " + (date || "Not selected"), 14, 40);
-
-    // Add table to the PDF using autoTable method directly from jsPDF
-    // const tableData = [
-    //   ["Customer Name", formData?.customerName || "Not provided"],
-    //   ["Customer Location", formData?.customerLocation || "Not provided"],
-    //   ["Equipment", formData?.equipment || "Not provided"],
-    //   ["Part No", formData?.partNo || "Not provided"],
-    //   ["Order No", formData?.orderNo || "Not provided"],
-    //   ["Stud Size", formData?.studSize || "Not provided"],
-    //   ["Contact Person Name", formData?.contactPersonName || "Not provided"],
-    //   ["Contact Person Email", formData?.contactPersonEmail || "Not provided"],
-    //   ["Planned Activity", formData?.plannedActivity || "Not provided"],
-    //   ["Activity Performed", formData?.activityPerformed || "Not provided"],
-    //   ["Visit Status", visitStatus || "Not provided"],
-    //   ...(visitStatus === "Pending" ? [["Reason for Pending", reason || "Not provided"]] : []),
-    //   ["Activity Points/Observation", formData?.activityPoints || "Not provided"]
-    // ];
-
     const visitStatusRow = [
       { content: "Visit Status", styles: { halign: "left", fontStyle: "bold" } },
       { content: visitStatus === "Pending" ? "Pending" : visitStatus === "Completed" ? "Completed" : "Not Provided", colSpan: 4, styles: { halign: "left" } },
@@ -128,11 +103,17 @@ function DisplayData() {
           {
             content: "Actions & Observations: ", // Combine label and data
             colSpan: 4, // Spanning all columns
-            styles: { halign: "left", fontStyle: "bold"}, // Fixed height
+            styles: { halign: "left", fontStyle: "bold" }, // Fixed height
           },
         ],
-        [
-          { content: formData?.activityPoints || "Not provided", colSpan: 4, styles: { halign: "left", minCellHeight: 132 } },
+        [ 
+          { 
+            content: formData?.activityPoints 
+              ? formData.activityPoints.replace(/<[^>]+>/g, '') 
+              : "Not provided", 
+            colSpan: 4, 
+            styles: { halign: "left", minCellHeight: 132 } 
+          },
         ],
         // Insert Visit Status or Reason for Pending based on the visitStatus
         [
@@ -303,7 +284,9 @@ function DisplayData() {
             <tr>
               <td className="border border-gray-300 p-2 font-semibold">Activity Points/Observation</td>
               <td className="border border-gray-300 p-2" colSpan={3}>
-                {formData?.activityPoints || "Not provided"}
+                {formData?.activityPoints
+                  ? formData.activityPoints.replace(/<[^>]+>/g, '') // Removes all HTML tags
+                  : "Not provided"}
               </td>
             </tr>
           </tbody>

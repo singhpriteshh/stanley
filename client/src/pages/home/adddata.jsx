@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { saveData } from "@/apis/api";
+
 
 function AddData() {
   const location = useLocation();
@@ -46,18 +50,38 @@ function AddData() {
     );
   };
 
-  function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+  
     if (isFormValid()) {
-      navigate("/protected/displaydata", {
-        state: {
-          data : { formData, visitStatus, reason }, 
-          data1 : {product, category, date},
+      const requestData = {
+        ...formData,
+        visitStatus,
+        reason,
+        product,
+        category,
+        date,
+      };
+  
+      try {
+        // Use your preferred method to send data to the backend
+        const response = await saveData(requestData);
+        if (response.status === 200) {
+          navigate('/protected/displaydata', {
+            state: {
+              data: { formData, visitStatus, reason },
+              data1: { product, category, date },
+            },
+          });
+        } else {
+          console.error('Failed to save data', response.data);
         }
-         // Pass data to the next page
-      });
+      } catch (error) {
+        console.error('Error while submitting data:', error);
+      }
     }
-  }
+  };
+  
 
   return (
     <div className="p-6 md:p-10">
@@ -298,18 +322,26 @@ function AddData() {
 
           {/* Activity Points (Textarea) */}
           <div className="flex flex-col">
-            <label htmlFor="activityPoints" className="text-sm font-medium text-gray-700">
+            <label htmlFor="activityPoints" className="text-sm font-medium text-gray-700 mb-1">
               Activity points/Observation:
             </label>
-            <textarea
-              id="activityPoints"
-              rows="4"
-              value={formData.activityPoints}
-              onChange={handleInputChange}
-              placeholder="Enter Observations"
-              className="mt-1 py-2 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            ></textarea>
+            <div className="bg-white border border-gray-300 rounded-md shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 ">
+              <ReactQuill
+                id="activityPoints"
+                value={formData.activityPoints}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    activityPoints: value,
+                  }))
+                }
+                placeholder="Enter Observations"
+                modules={quillModules}
+                formats={quillFormats}
+              />
+            </div>
           </div>
+
 
           {/* Submit Button */}
           <div className="text-center">
@@ -326,5 +358,21 @@ function AddData() {
     </div>
   );
 }
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, false] }],
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'header',
+  'bold', 'italic', 'underline',
+  'list', 'bullet',
+];
+
 
 export default AddData;
